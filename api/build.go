@@ -754,26 +754,52 @@ func RestartBuild(c *gin.Context) {
 		return
 	}
 
-	// send API call to capture the last build for the repo
-	lastBuild, err := database.FromContext(c).GetLastBuild(r)
-	if err != nil {
-		// nolint: lll // ignore long line length due to error message
-		retErr := fmt.Errorf("unable to get last build for %s/%d: %w", r.GetFullName(), b.GetNumber(), err)
+	// // send API call to capture the last build for the repo
+	// lastBuild, err := database.FromContext(c).GetLastBuild(r)
+	// if err != nil {
+	// 	// nolint: lll // ignore long line length due to error message
+	// 	retErr := fmt.Errorf("unable to get last build for %s/%d: %w", r.GetFullName(), b.GetNumber(), err)
 
+	// 	util.HandleError(c, http.StatusInternalServerError, retErr)
+
+	// 	return
+	// }
+
+	// mut.Lock()
+
+	// // send API call to capture repo for the counter
+	// r, err = database.FromContext(c).GetRepo(r.GetOrg(), r.GetName())
+	// if err != nil {
+	// 	retErr := fmt.Errorf("%s: failed to get repo %s: %v", baseErr, r.GetFullName(), err)
+	// 	util.HandleError(c, http.StatusBadRequest, retErr)
+
+	// 	return
+	// }
+
+	// send API call to increment the counter for the repo
+	r, err = database.FromContext(c).Lock(func() (*library.Repo, error) {
+		return database.FromContext(c).IncrementCounter(r.GetOrg(), r.GetName())
+	})
+	// r, err = database.FromContext(c).IncrementCounter(r.GetOrg(), r.GetName())
+	if err != nil {
+		retErr := fmt.Errorf("%s: failed to increment the counter for the repo %s: %v", baseErr, r.GetFullName(), err)
 		util.HandleError(c, http.StatusInternalServerError, retErr)
 
 		return
 	}
 
-	// update the build numbers based off repo counter
-	inc := r.GetCounter() + 1
+	// logrus.Infof("-------------------------------last build details: %v", lastBuild)
 
-	r.SetCounter(inc)
-	b.SetNumber(inc)
+	// // update the build numbers based off repo counter
+	// inc := r.GetCounter() + 1
 
+	// r.SetCounter(r.GetCounter())
+	b.SetParent(b.GetNumber())
+	b.SetNumber(r.GetCounter())
+
+	// logrus.Trace("********************* repo details after incrementing: %v", r.GetCounter())
 	// update fields in build object
 	b.SetID(0)
-	b.SetParent(lastBuild.GetNumber())
 	b.SetCreated(time.Now().UTC().Unix())
 	b.SetEnqueued(0)
 	b.SetStarted(0)
@@ -1162,6 +1188,7 @@ func planBuild(database database.Service, p *pipeline.Build, b *library.Build, r
 	b.SetCreated(time.Now().UTC().Unix())
 
 	// send API call to create the build
+	logrus.Infof("*********************************** calling api to save build: %v", b)
 	err := database.CreateBuild(b)
 	if err != nil {
 		// clean up the objects from the pipeline in the database

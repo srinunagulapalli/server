@@ -25,6 +25,12 @@ func (c *client) GetRepo(org, name string) (*library.Repo, error) {
 	r := new(database.Repo)
 
 	// send query to the database and store result in variable
+	// result := c.Lock(func() *gorm.DB {
+	// 	return c.Sqlite.
+	// 		Table(constants.TableRepo).
+	// 		Raw(dml.SelectRepo, org, name).
+	// 		Scan(r)
+	// })
 	result := c.Sqlite.
 		Table(constants.TableRepo).
 		Raw(dml.SelectRepo, org, name).
@@ -102,6 +108,11 @@ func (c *client) UpdateRepo(r *library.Repo) error {
 	}
 
 	// send query to the database
+	// return c.Lock(func() *gorm.DB {
+	// 	return c.Sqlite.
+	// 		Table(constants.TableRepo).
+	// 		Save(repo)
+	// }).Error
 	return c.Sqlite.
 		Table(constants.TableRepo).
 		Save(repo).Error
@@ -115,4 +126,25 @@ func (c *client) DeleteRepo(id int64) error {
 	return c.Sqlite.
 		Table(constants.TableRepo).
 		Exec(dml.DeleteRepo, id).Error
+}
+
+func (c *client) IncrementCounter(org, name string) (*library.Repo, error) {
+	// c.lock.Lock()
+	// defer c.lock.Unlock()
+	r, err := c.GetRepo(org, name)
+	if err != nil {
+		return nil, err
+	}
+	inc := r.GetCounter() + 1
+	r.SetCounter(inc)
+	err = c.UpdateRepo(r)
+	if err != nil {
+		return nil, err
+	}
+	return r, nil
+	// r, err = c.GetRepo(org, name)
+	// if err != nil {
+	// 	return nil, err
+	// }
+	// return r, nil
 }
