@@ -777,16 +777,19 @@ func RestartBuild(c *gin.Context) {
 	// }
 
 	// send API call to increment the counter for the repo
-	r, err = database.FromContext(c).Lock(func() (*library.Repo, error) {
-		return database.FromContext(c).IncrementCounter(r.GetOrg(), r.GetName())
-	})
-	// r, err = database.FromContext(c).IncrementCounter(r.GetOrg(), r.GetName())
+	// r, err = database.FromContext(c).Lock(func() (*library.Repo, error) {
+	// 	return database.FromContext(c).IncrementCounter(r.GetOrg(), r.GetName())
+	// })
+	data := make(chan int)
+	go func() { database.FromContext(c).IncrementCounter(r.GetOrg(), r.GetName(), data) }()
 	if err != nil {
 		retErr := fmt.Errorf("%s: failed to increment the counter for the repo %s: %v", baseErr, r.GetFullName(), err)
 		util.HandleError(c, http.StatusInternalServerError, retErr)
 
 		return
 	}
+	inc := <-data
+	r.SetCounter(inc)
 
 	// logrus.Infof("-------------------------------last build details: %v", lastBuild)
 

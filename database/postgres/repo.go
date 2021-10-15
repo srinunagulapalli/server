@@ -128,7 +128,7 @@ func (c *client) DeleteRepo(id int64) error {
 		Exec(dml.DeleteRepo, id).Error
 }
 
-func (c *client) IncrementCounter(org, name string) (*library.Repo, error) {
+func (c *client) IncrementCounter(org, name string, data chan int) {
 	// c.lock.Lock()
 	// defer c.lock.Unlock()
 	// return c.Lock(func() (*library.Repo, error) {
@@ -151,18 +151,19 @@ func (c *client) IncrementCounter(org, name string) (*library.Repo, error) {
 	// })
 	r, err := c.GetRepo(org, name)
 	if err != nil {
-		return nil, err
+		return
 	}
 	inc := r.GetCounter() + 1
 	r.SetCounter(inc)
 	err = c.UpdateRepo(r)
 	if err != nil {
-		return nil, err
+		return
 	}
+	data <- inc
 	// return r, nil
-	r, err = c.GetRepo(org, name)
-	if err != nil {
-		return nil, err
-	}
-	return r, nil
+	// r, err = c.GetRepo(org, name)
+	// if err != nil {
+	// 	return nil, err
+	// }
+	// return r, nil
 }

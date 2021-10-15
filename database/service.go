@@ -147,7 +147,7 @@ type Service interface {
 	DeleteRepo(int64) error
 	// IncrementCounter defines a function that
 	// increments the counter for the repo
-	IncrementCounter(string, string) (*library.Repo, error)
+	IncrementCounter(string, string, chan int)
 	Lock(func() (*library.Repo, error)) (*library.Repo, error)
 
 	// Secret Database Interface Functions
