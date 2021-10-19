@@ -765,42 +765,18 @@ func RestartBuild(c *gin.Context) {
 	// 	return
 	// }
 
-	// mut.Lock()
-
-	// // send API call to capture repo for the counter
-	// r, err = database.FromContext(c).GetRepo(r.GetOrg(), r.GetName())
-	// if err != nil {
-	// 	retErr := fmt.Errorf("%s: failed to get repo %s: %v", baseErr, r.GetFullName(), err)
-	// 	util.HandleError(c, http.StatusBadRequest, retErr)
-
-	// 	return
-	// }
-
 	// send API call to increment the counter for the repo
-	// r, err = database.FromContext(c).Lock(func() (*library.Repo, error) {
-	// 	return database.FromContext(c).IncrementCounter(r.GetOrg(), r.GetName())
-	// })
-	data := make(chan int)
-	go func() { database.FromContext(c).IncrementCounter(r.GetOrg(), r.GetName(), data) }()
+	r, err = database.FromContext(c).IncrementCounter(r.GetOrg(), r.GetName())
 	if err != nil {
 		retErr := fmt.Errorf("%s: failed to increment the counter for the repo %s: %v", baseErr, r.GetFullName(), err)
 		util.HandleError(c, http.StatusInternalServerError, retErr)
 
 		return
 	}
-	inc := <-data
-	r.SetCounter(inc)
 
-	// logrus.Infof("-------------------------------last build details: %v", lastBuild)
-
-	// // update the build numbers based off repo counter
-	// inc := r.GetCounter() + 1
-
-	// r.SetCounter(r.GetCounter())
 	b.SetParent(b.GetNumber())
 	b.SetNumber(r.GetCounter())
 
-	// logrus.Trace("********************* repo details after incrementing: %v", r.GetCounter())
 	// update fields in build object
 	b.SetID(0)
 	b.SetCreated(time.Now().UTC().Unix())
