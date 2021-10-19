@@ -148,6 +148,9 @@ type Service interface {
 	// DeleteRepo defines a function that
 	// deletes a repo by unique ID.
 	DeleteRepo(int64) error
+	// IncrementCounter defines a function that
+	// increments the counter for the repo
+	IncrementCounter(string, string) (*library.Repo, error)
 
 	// Secret Database Interface Functions
 

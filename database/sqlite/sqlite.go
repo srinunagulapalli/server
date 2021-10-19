@@ -6,10 +6,12 @@ package sqlite
 
 import (
 	"fmt"
+	"sync"
 	"time"
 
 	"github.com/go-vela/server/database/sqlite/ddl"
 	"github.com/go-vela/types/constants"
+	"github.com/go-vela/types/library"
 	"github.com/sirupsen/logrus"
 
 	"gorm.io/driver/sqlite"
@@ -35,10 +37,18 @@ type (
 	}
 
 	client struct {
+		lock   sync.RWMutex
 		config *config
 		Sqlite *gorm.DB
 	}
 )
+
+func (c *client) Lock(fn func() (*library.Repo, error)) (*library.Repo, error) {
+	c.lock.Lock()
+	repo, err := fn()
+	c.lock.Unlock()
+	return repo, err
+}
 
 // New returns a Database implementation that integrates with a Sqlite instance.
 //

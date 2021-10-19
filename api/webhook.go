@@ -380,10 +380,11 @@ func PostWebhook(c *gin.Context) {
 		}
 
 		// update the build numbers based off repo counter
-		inc := r.GetCounter() + 1
+		// inc := r.GetCounter() + 1
+		r, err = database.FromContext(c).IncrementCounter(r.GetOrg(), r.GetName())
 
-		r.SetCounter(inc)
-		b.SetNumber(inc)
+		// r.SetCounter(inc)
+		b.SetNumber(r.GetCounter())
 
 		// populate the build link if a web address is provided
 		if len(m.Vela.WebAddress) > 0 {

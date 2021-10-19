@@ -6,11 +6,13 @@ package postgres
 
 import (
 	"fmt"
+	"sync"
 	"time"
 
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/go-vela/server/database/postgres/ddl"
 	"github.com/go-vela/types/constants"
+	"github.com/go-vela/types/library"
 	"github.com/sirupsen/logrus"
 
 	"gorm.io/driver/postgres"
@@ -36,10 +38,18 @@ type (
 	}
 
 	client struct {
+		lock     sync.RWMutex
 		config   *config
 		Postgres *gorm.DB
 	}
 )
+
+func (c *client) Lock(fn func() (*library.Repo, error)) (*library.Repo, error) {
+	c.lock.Lock()
+	repo, err := fn()
+	c.lock.Unlock()
+	return repo, err
+}
 
 // New returns a Database implementation that integrates with a Postgres instance.
 //
